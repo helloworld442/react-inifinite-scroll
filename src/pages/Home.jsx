@@ -1,74 +1,55 @@
-import { useQuery } from "react-query";
 import { readPetData } from "../api/api";
-import Error from "../components/ui/Error";
 import Layout from "../components/ui/Layout";
 import PetList from "../features/pets/PetList";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import useIntersectionObserver from "../hooks/useIntersectionObserver";
 import Loader from "../components/ui/Loader";
 
 const Home = () => {
-  const { isLoading, isError, data } = useQuery("pets", readPetData);
-  const [page, setPage] = useState(1);
-  const [moreData, setMoreData] = useState([]);
-  const [fetch, setFetch] = useState(false);
+  const targetRef = useRef(null);
+  const [page, setPage] = useState(0);
+  const [data, setData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [observe, unobserve] = useIntersectionObserver(() => {
+    setPage((page) => page + 1);
+  });
 
-  if (data && fetch) {
-    const fetchedData = data.data.slice(page * 5, (page + 1) * 5);
-    setMoreData([...moreData, ...fetchedData]);
-    setPage((page + 1) % 2);
-    setFetch(false);
-  }
-
-  const handleScroll = () => {
-    const scrollHeight = document.documentElement.scrollHeight;
-    const scrollTop = document.documentElement.scrollTop;
-    const clientHeight = document.documentElement.clientHeight;
-
-    // 페이지 끝에 도달하고 fetch가 진행되지 않는 상태일 때 동작
-    if (scrollTop + clientHeight >= scrollHeight) {
-      setFetch(true);
-    }
+  const fetchData = async (page) => {
+    const petData = await readPetData(page);
+    setData(petData.data);
+    setIsLoading(false);
   };
 
   useEffect(() => {
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
+    setIsLoading(true);
+    fetchData(page);
+  }, [page]);
 
-  if (isLoading) {
-    return (
-      <Layout>
-        <PetList>
-          <Loader />
-        </PetList>
-      </Layout>
-    );
-  }
+  //데이터가 초과량이 되었을 때 데이터를 그만 받아오기
+  useEffect(() => {
+    const totalData = 100;
+    if (data.length >= totalData) {
+      targetRef.current.style.display = "none";
+    }
+  }, [data]);
 
-  if (isError) {
-    return (
-      <Layout>
-        <PetList>
-          <Error />
-        </PetList>
-      </Layout>
-    );
-  }
+  useEffect(() => {
+    if (isLoading) {
+      unobserve(targetRef.current);
+    } else {
+      observe(targetRef.current);
+    }
+  }, [isLoading]);
 
   return (
     <Layout>
       <PetList>
-        {data &&
-          data.data.map((item, idx) => (
-            <PetList.Item item={item} key={item.id} idx={idx} />
-          ))}
-        {moreData &&
-          moreData.map((item, idx) => (
-            <PetList.Item item={item} key={item.id} idx={idx + 5} />
-          ))}
+        {data.map((item, idx) => (
+          <PetList.Item item={item} key={item.id} idx={idx} />
+        ))}
+        {isLoading && <Loader />}
       </PetList>
+      <div ref={targetRef} style={{ width: "100%", height: 30 }} />
     </Layout>
   );
 };

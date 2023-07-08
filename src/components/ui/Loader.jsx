@@ -5,9 +5,6 @@ const Loader = () => {
 };
 
 const StLoader = styled.div`
-  position: fixed;
-  left: calc(50% - 100px);
-  top: calc(50% - 100px);
   width: 100px;
   height: 100px;
   border: 6px solid #fff;

@@ -9,12 +9,14 @@ const Pet = axios.create({
   },
 });
 
-export const readPetData = async () => {
+export const readPetData = async (page) => {
   const response = await Pet.get("/v1/images/search", {
     params: {
       format: "json",
-      limit: "10",
+      limit: 10,
+      page: page,
       has_breeds: true,
+      order: "ASC",
     },
   });
   return response;

@@ -1,8 +1,14 @@
 import { styled } from "styled-components";
 
+/**
+ * @param {Array} item the pet data
+ * @param {number} idx the id of pet data
+ */
+
 const PetItem = ({ item, idx }) => {
   const title = item.breeds[0].name;
   const imgSrc = item.url;
+
   return (
     <StPetItem>
       <div className="id">{idx + 1}</div>
@@ -52,7 +58,7 @@ const StPetItem = styled.li`
         height: 50px;
         border-radius: 100%;
         border: 2px solid #333;
-        object-fit: contain;
+        object-fit: cover;
       }
     }
 
