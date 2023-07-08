@@ -3,51 +3,50 @@ import Layout from "../components/ui/Layout";
 import PetList from "../features/pets/PetList";
 import { useEffect, useRef, useState } from "react";
 import useIntersectionObserver from "../hooks/useIntersectionObserver";
-import Loader from "../components/ui/Loader";
 
 const Home = () => {
   const targetRef = useRef(null);
-  const [page, setPage] = useState(0);
-  const [data, setData] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [prevData, setPrevData] = useState([]);
+  const [backData, setBackData] = useState([]);
   const [observe, unobserve] = useIntersectionObserver(() => {
     setPage((page) => page + 1);
   });
 
+  const moreData = async (page) => {
+    const backData = await readPetData(page);
+    setBackData(backData.data);
+  };
+
   const fetchData = async (page) => {
     const petData = await readPetData(page);
-    setData(petData.data);
-    setIsLoading(false);
+    setPrevData(petData.data);
+    moreData(page + 1);
   };
 
   useEffect(() => {
-    setIsLoading(true);
     fetchData(page);
+  }, []);
+
+  useEffect(() => {
+    observe(targetRef.current);
+    setPrevData(prevData.concat(backData));
+    moreData(page + 1);
   }, [page]);
 
-  //데이터가 초과량이 되었을 때 데이터를 그만 받아오기
   useEffect(() => {
-    const totalData = 100;
-    if (data.length >= totalData) {
-      targetRef.current.style.display = "none";
-    }
-  }, [data]);
-
-  useEffect(() => {
-    if (isLoading) {
+    const lastData = 100;
+    if (prevData.length >= lastData) {
       unobserve(targetRef.current);
-    } else {
-      observe(targetRef.current);
     }
-  }, [isLoading]);
+  }, [prevData]);
 
   return (
     <Layout>
       <PetList>
-        {data.map((item, idx) => (
-          <PetList.Item item={item} key={item.id} idx={idx} />
+        {prevData.map((item, idx) => (
+          <PetList.Item item={item} key={idx} idx={idx} />
         ))}
-        {isLoading && <Loader />}
       </PetList>
       <div ref={targetRef} style={{ width: "100%", height: 30 }} />
     </Layout>
